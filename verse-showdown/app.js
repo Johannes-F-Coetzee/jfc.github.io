@@ -13,11 +13,13 @@
   const { MAXIMUM_SCORE, parseBibleText, parseReference, formatReference, searchAllTranslations, highlightMatchingWords,
     pickRandomVerse, scoreGuess } = window.VerseShowdownBible;
 
+  const playersDetails = document.getElementById("players-details");
   const playerForm = document.getElementById("player-form");
   const playerNameInput = document.getElementById("player-name");
   const playerStatus = document.getElementById("player-status");
   const playersEmptyMessage = document.getElementById("players-empty");
-  const scoreboardList = document.getElementById("scoreboard");
+  const scoreboardTable = document.getElementById("scoreboard");
+  const scoreboardRows = document.getElementById("scoreboard-rows");
   const resetScoresButton = document.getElementById("reset-scores");
   const searchPanel = document.getElementById("search-panel");
   const testamentSelect = document.getElementById("testament");
@@ -90,7 +92,8 @@
         .map(player => ({
           name: player.name.trim().slice(0, MAXIMUM_PLAYER_NAME_LENGTH),
           totalScore: Number.isFinite(player.totalScore) ? player.totalScore : 0,
-          roundsPlayed: Number.isFinite(player.roundsPlayed) ? player.roundsPlayed : 0
+          roundsPlayed: Number.isFinite(player.roundsPlayed) ? player.roundsPlayed : 0,
+          roundScores: Array.isArray(player.roundScores) ? player.roundScores : []
         }));
     } catch {
       return [];
@@ -113,22 +116,56 @@
 
   function renderScoreboard() {
     const rankedPlayers = [...players].sort((first, second) => second.totalScore - first.totalScore);
-    scoreboardList.replaceChildren(...rankedPlayers.map(player => {
-      const item = createElement("li", "scoreboard-item");
-      const details = createElement("div", "scoreboard-details");
-      const roundsLabel = player.roundsPlayed === 1 ? "round" : "rounds";
-      const removeButton = createElement("button", "secondary remove-button", "Remove");
-      removeButton.type = "button";
-      removeButton.setAttribute("aria-label", `Remove ${player.name}`);
-      removeButton.addEventListener("click", () => removePlayer(player.name));
-      details.append(
-        createElement("span", "player-name", player.name),
-        createElement("span", "muted small", `${formatPoints(player.totalScore)} pts · ${player.roundsPlayed} ${roundsLabel}`)
-      );
-      item.append(details, removeButton);
+    scoreboardRows.replaceChildren(...rankedPlayers.map((player, index) => {
+      const row = createElement("tr", "scoreboard-row");
+      const rank = index + 1;
+      let rankMedal = "";
+      let rankClass = "rank-other";
+      let rankDisplay = rank;
 
-      return item;
+      if (rank === 1) {
+        rankMedal = "🥇";
+        rankClass = "rank-gold";
+        rankDisplay = rankMedal;
+      } else if (rank === 2) {
+        rankMedal = "🥈";
+        rankClass = "rank-silver";
+        rankDisplay = rankMedal;
+      } else if (rank === 3) {
+        rankMedal = "🥉";
+        rankClass = "rank-bronze";
+        rankDisplay = rankMedal;
+      }
+
+      const highestScore = player.roundScores && player.roundScores.length > 0
+        ? Math.max(...player.roundScores)
+        : 0;
+      const roundAverage = player.roundsPlayed > 0
+        ? Math.round(player.totalScore / player.roundsPlayed)
+        : 0;
+
+      const rankCell = createElement("td", rankClass, rankDisplay);
+      const nameCell = createElement("td", "", player.name);
+      const pointsCell = createElement("td", "", formatPoints(player.totalScore));
+      const highestCell = createElement("td", "", formatPoints(highestScore));
+      const averageCell = createElement("td", "", formatPoints(roundAverage));
+
+      const removeLink = createElement("a", "remove-link", "✕");
+      removeLink.href = "#";
+      removeLink.setAttribute("aria-label", `Remove ${player.name}`);
+      removeLink.title = `Remove ${player.name}`;
+      removeLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        removePlayer(player.name);
+      });
+      const removeCell = createElement("td", "remove-cell");
+      removeCell.append(removeLink);
+
+      row.append(rankCell, nameCell, pointsCell, highestCell, averageCell, removeCell);
+
+      return row;
     }));
+    scoreboardTable.hidden = players.length === 0;
     playersEmptyMessage.hidden = players.length > 0;
     resetScoresButton.hidden = players.length === 0;
   }
@@ -160,7 +197,7 @@
       return;
     }
 
-    players.push({ name, totalScore: 0, roundsPlayed: 0 });
+    players.push({ name, totalScore: 0, roundsPlayed: 0, roundScores: [] });
     playerNameInput.value = "";
     playerStatus.textContent = `${name} added.`;
     refreshPlayers();
@@ -184,7 +221,7 @@
       return;
     }
 
-    players = players.map(player => ({ ...player, totalScore: 0, roundsPlayed: 0 }));
+    players = players.map(player => ({ ...player, totalScore: 0, roundsPlayed: 0, roundScores: [] }));
     playerStatus.textContent = "Scores reset.";
     refreshPlayers();
   }
@@ -193,6 +230,32 @@
     searchQueryInput.disabled = !isEnabled;
     searchButton.disabled = !isEnabled;
     randomVerseButton.disabled = !isEnabled;
+  }
+
+  function updateBookAutocomplete() {
+    const testament = testamentSelect.value;
+    const oldTestamentBookCount = 39;
+    const filteredBooks = currentBible.books.filter((book, index) => {
+      if (testament === "all") {
+        return true;
+      }
+
+      if (testament === "old") {
+        return index < oldTestamentBookCount;
+      }
+
+      if (testament === "new") {
+        return index >= oldTestamentBookCount;
+      }
+
+      return false;
+    });
+    bookNamesList.replaceChildren(...filteredBooks.map(book => {
+      const option = document.createElement("option");
+      option.value = book.name;
+
+      return option;
+    }));
   }
 
   async function fetchTranslation(translation) {
@@ -207,7 +270,7 @@
 
   async function loadTranslations() {
     setSearchEnabled(false);
-    searchStatus.textContent = `Loading ${TRANSLATIONS.length} Bible versions…`;
+    searchStatus.innerHTML = `<span class="loading-spinner"></span>Loading ${TRANSLATIONS.length} Bible versions…`;
 
     try {
       loadedTranslations = await Promise.all(TRANSLATIONS.map(fetchTranslation));
@@ -218,12 +281,7 @@
     }
 
     currentBible = loadedTranslations[0].bible;
-    bookNamesList.replaceChildren(...currentBible.books.map(book => {
-      const option = document.createElement("option");
-      option.value = book.name;
-
-      return option;
-    }));
+    updateBookAutocomplete();
     const translationIds = loadedTranslations.map(translation => translation.id.toUpperCase()).join(", ");
     searchStatus.textContent = `Searching all versions: ${translationIds}.`;
     setSearchEnabled(true);
@@ -232,7 +290,15 @@
   function runSearch(event) {
     event.preventDefault();
     const query = searchQueryInput.value.trim();
+
+    searchStatus.innerHTML = '<span class="loading-spinner"></span>Searching...';
+    searchButton.classList.add("is-loading");
+    searchButton.disabled = true;
+
     const result = searchAllTranslations(loadedTranslations, query, SEARCH_RESULT_LIMIT, testamentSelect.value);
+
+    searchButton.classList.remove("is-loading");
+    searchButton.disabled = false;
 
     if (result.error) {
       searchStatus.textContent = result.error;
@@ -322,8 +388,15 @@
   }
 
   function pickRandomChallenge() {
+    randomVerseButton.classList.add("is-loading");
+    randomVerseButton.disabled = true;
+
     const translation = loadedTranslations[Math.floor(Math.random() * loadedTranslations.length)];
     const verse = pickRandomVerse(translation.bible, Math.random, testamentSelect.value);
+
+    randomVerseButton.classList.remove("is-loading");
+    randomVerseButton.disabled = false;
+
     startChallenge({ clue: verse.text, clueSource: translation.name, verse, translationId: translation.id });
   }
 
@@ -375,6 +448,7 @@
 
     renderAnswerFields();
     setAnswersLocked(false);
+    playersDetails.open = false;
     showPanel(answerPanel);
     selectPanel.hidden = !currentSearchResult;
     answerHeading.focus();
@@ -389,6 +463,14 @@
 
     if (reference.error) {
       return { message: reference.error, isError: true };
+    }
+
+    if (reference.chapter === null) {
+      reference.chapter = 1;
+    }
+
+    if (reference.verse === null) {
+      reference.verse = 1;
     }
 
     return { message: `Reads as ${formatReference(currentBible, reference)}.`, reference };
@@ -485,6 +567,10 @@
       const score = scoreGuess(currentBible, lockedAnswer.guess, verse);
       lockedAnswer.player.totalScore += score.score;
       lockedAnswer.player.roundsPlayed += 1;
+      if (!lockedAnswer.player.roundScores) {
+        lockedAnswer.player.roundScores = [];
+      }
+      lockedAnswer.player.roundScores.push(score.score);
 
       return { name: lockedAnswer.player.name, guess: lockedAnswer.guess, score };
     });
@@ -527,19 +613,24 @@
     searchResultsList.replaceChildren();
     searchStatus.textContent = "";
     searchQueryInput.value = "";
+    playersDetails.open = true;
     showPanel(searchPanel);
     searchQueryInput.focus();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function returnToSearch() {
     currentVerse = null;
     currentSearchResult = null;
+    playersDetails.open = true;
     showPanel(searchPanel);
     searchQueryInput.focus();
   }
 
   playerForm.addEventListener("submit", addPlayer);
   resetScoresButton.addEventListener("click", resetScores);
+  testamentSelect.addEventListener("change", updateBookAutocomplete);
   searchForm.addEventListener("submit", runSearch);
   randomVerseButton.addEventListener("click", pickRandomChallenge);
   answerForm.addEventListener("submit", lockAnswers);

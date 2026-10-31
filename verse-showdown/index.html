@@ -19,8 +19,8 @@
   </header>
 
   <main class="layout">
-    <section class="panel players-panel" aria-labelledby="players-heading">
-      <h2 id="players-heading">Players</h2>
+    <details class="panel players-panel" id="players-details" open>
+      <summary id="players-heading">Players</summary>
       <form id="player-form" class="inline-form" novalidate>
         <label for="player-name">Player name</label>
         <div class="input-row">
@@ -30,9 +30,21 @@
         <p id="player-status" class="field-message" role="status" aria-live="polite"></p>
       </form>
       <p id="players-empty" class="muted">Add everyone taking part.</p>
-      <ol id="scoreboard" class="scoreboard"></ol>
+      <table id="scoreboard" class="scoreboard" hidden>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Points</th>
+            <th>Highest</th>
+            <th>Avg/Round</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="scoreboard-rows"></tbody>
+      </table>
       <button type="button" id="reset-scores" class="secondary">Reset scores</button>
-    </section>
+    </details>
 
     <div class="game">
       <section id="search-panel" class="panel" aria-labelledby="search-heading">

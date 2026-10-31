@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Seek &amp; Find: search the Bible, hide the reference, and see how close everyone gets, scored out of 1000.">
+  <title>Seek &amp; Find</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header class="site-header">
+    <a class="brand" href="../">&larr; Home</a>
+    <h1>Seek &amp; Find</h1>
+  </header>
+
+  <main>
+    <p id="status" class="status" role="status" aria-live="polite">Loading the Bible&hellip;</p>
+
+    <section class="card" aria-labelledby="players-heading">
+      <h2 id="players-heading">1. Players</h2>
+      <p class="hint">Add everyone taking part. You will capture where each of them thinks the scripture is found next.</p>
+      <fieldset id="roster-fieldset" class="answer-fieldset">
+        <form id="roster-form" class="roster-form">
+          <label class="field" for="roster-name">Player name
+            <input id="roster-name" type="text" maxlength="40" autocomplete="off" required>
+          </label>
+          <button class="btn primary" type="submit">Add player</button>
+        </form>
+        <p id="roster-message" class="hint" role="status" aria-live="polite"></p>
+      </fieldset>
+    </section>
+
+    <section class="card" aria-labelledby="answers-heading">
+      <h2 id="answers-heading">2. Answers</h2>
+      <p class="hint">Pick a player and lock in the book, chapter and verse they think it is. Answers stay hidden. Lock in
+        every answer, or skip answering for everyone, before a verse can be chosen.</p>
+      <fieldset id="answer-fieldset" class="answer-fieldset">
+        <form id="player-form" class="player-form">
+          <label class="field" for="player-name">Player
+            <select id="player-name" required></select>
+          </label>
+          <label class="field" for="answer-book">Book
+            <input id="answer-book" type="text" list="book-names" autocomplete="off" placeholder="e.g. John or 1 Cor" required>
+            <datalist id="book-names"></datalist>
+          </label>
+          <label class="field" for="answer-chapter">Chapter
+            <input id="answer-chapter" type="number" inputmode="numeric" min="1" required>
+          </label>
+          <label class="field" for="answer-verse">Verse
+            <input id="answer-verse" type="number" inputmode="numeric" min="1" required>
+          </label>
+          <button class="btn primary" type="submit">Lock in answer</button>
+        </form>
+        <p id="player-message" class="hint" role="status" aria-live="polite"></p>
+        <div class="button-row">
+          <button id="skip-button" class="btn ghost" type="button">Skip answering for everyone</button>
+        </div>
+      </fieldset>
+      <p id="answer-progress" class="answer-progress" role="status" aria-live="polite"></p>
+      <h3>Players and total scores</h3>
+      <p class="hint">Players and their total scores are kept on this device between rounds and visits.</p>
+      <ul id="player-list" class="player-list"></ul>
+      <div class="button-row">
+        <button id="clear-players-button" class="btn ghost" type="button">Clear players and scores</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="search-heading">
+      <h2 id="search-heading">3. Find a scripture</h2>
+      <p id="search-gate-note" class="hint warning">Search results can be chosen once every answer is locked in, or answering is skipped.</p>
+      <form id="search-form" class="search-form" role="search">
+        <label class="field search-field" for="search-input">Search by words or by reference
+          <input id="search-input" type="search" autocomplete="off" placeholder="e.g. &quot;faith hope love&quot; or John 3:16">
+        </label>
+        <label class="field" for="testament-select">Search in
+          <select id="testament-select">
+            <option value="all">Whole Bible</option>
+            <option value="old">Old Testament</option>
+            <option value="new">New Testament</option>
+          </select>
+        </label>
+        <button class="btn primary" type="submit">Search</button>
+        <button id="random-button" class="btn" type="button">Random verse</button>
+      </form>
+      <p class="hint">Every version is searched at once and the matches are merged. Results never show the verse or its
+        reference, only the percent match of the five closest. Type words, or a reference such as <em>Psalm 23</em> or
+        <em>Rom 8:28-30</em>.</p>
+      <p id="search-summary" class="summary" hidden></p>
+      <ol id="search-results" class="verse-list"></ol>
+      <div id="chosen-panel" class="chosen-panel" hidden>
+        <p>A verse is chosen and its reference is hidden. Answers are locked.</p>
+        <div class="button-row">
+          <button id="reveal-button" class="btn primary" type="button">Reveal and score</button>
+          <button id="change-verse-button" class="btn ghost" type="button">Choose a different verse</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="results-section" class="card" aria-labelledby="results-heading" hidden>
+      <h2 id="results-heading">4. Results</h2>
+      <blockquote id="results-verse" class="challenge-text"></blockquote>
+      <p class="answer-line">The answer: <strong id="results-reference"></strong></p>
+      <p id="results-skipped" class="hint" hidden>Answering was skipped, so there are no scores this round.</p>
+      <ol id="results-list" class="results-list"></ol>
+      <h3>Total scores</h3>
+      <ol id="totals-list" class="totals-list"></ol>
+      <div class="button-row">
+        <button id="share-button" class="btn primary" type="button">Share results</button>
+        <button id="copy-button" class="btn" type="button">Copy results</button>
+        <button id="again-button" class="btn" type="button">Next round, same players</button>
+      </div>
+      <p id="share-message" class="hint" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Searches the King James Version, World English Bible and American Standard Version together.</p>
+    <p>Texts are public domain, from <a href="https://ebible.org/">eBible.org</a>.</p>
+  </footer>
+
+  <script src="bible.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

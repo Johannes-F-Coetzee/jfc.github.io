@@ -5,7 +5,7 @@
 const { readdirSync, readFileSync } = require("node:fs");
 const path = require("node:path");
 
-const FITNESS_DIRECTORY = path.join(__dirname, "..", "fitness");
+const CHECKED_DIRECTORIES = ["fitness", "seek-and-find", "verse-showdown"].map(name => path.join(__dirname, "..", name));
 const CHECKED_EXTENSIONS = new Set([".js", ".html", ".css"]);
 const BRACELESS_CONTROL_FLOW = /^\s*(?:\}\s*)?(?:if|for|while)\s*\(.*\)\s*[^{\s].*;\s*$|^\s*else\s+[^{i\s].*;\s*$/;
 
@@ -49,7 +49,7 @@ function checkFile(filePath) {
   return problems;
 }
 
-const problems = listFiles(FITNESS_DIRECTORY).flatMap(checkFile);
+const problems = CHECKED_DIRECTORIES.flatMap(listFiles).flatMap(checkFile);
 
 if (problems.length) {
   console.error(problems.join("\n"));

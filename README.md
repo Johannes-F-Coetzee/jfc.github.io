@@ -9,6 +9,8 @@ Static GitHub Pages site.
 | Fitness trends | [`fitness/trends.html`](fitness/trends.html) |
 | Fitness tracking | [`fitness/track.html`](fitness/track.html) |
 | Fitness plan | [`fitness/plan.html`](fitness/plan.html) |
+| Seek & Find | [`seek-and-find/`](seek-and-find/) |
+| Verse Showdown | [`verse-showdown/`](verse-showdown/) |
 
 
 ## Fitness tracker
@@ -74,3 +76,27 @@ All fitness regression tests (Node.js): `npm test` (or `node --test fitness/test
 - A completed form submission is not a confirmed save. Google Forms replies opaquely to the browser, so "sent" means the request left this device. Routine and plan saves read their data back to confirm; for workout logs, check the Trends page.
 
 GitHub Pages is static hosting, so sign-in gates only the user interface. All Google Forms' `formResponse` URLs are public in the page source, and anyone who finds them could submit data directly. Share form-edit access only with trusted tracker users, keep the response spreadsheets private, and treat the `email` columns as claimed attribution, not proof of who logged or saved a workout or measurement.
+
+## Seek & Find
+
+`seek-and-find/` is a Bible search game that runs entirely on GitHub Pages: no server, accounts or build step.
+
+- **Players** are added first, then **Answers** are captured: pick each player and lock in their guess of the book (free text: a name, an abbreviation like `1 cor`, or a whole reference like `John 3:16`), chapter and verse (answers stay hidden), or skip answering for everyone. A warning names anyone still without an answer.
+- **Find a scripture** across all three versions at once, optionally limited to the Old or New Testament (this also applies to Random verse). Results show only the five closest as a percent match with the matching words (other words are blurred), never the verse or its reference. Choosing is unlocked once every answer is locked in or answering is skipped.
+- **Reveal and score** shows the answer and each player's score out of 1000 (ranked, with running total scores that persist on this device, along with the player list), and a *Share results* button (Web Share, falling back to copying text). When answering was skipped there are no scores.
+
+Scoring: 400 points for the right book (a nearby book earns up to 200), plus 300 for the chapter and 300 for the verse. Chapter and verse points shrink the further the guess is from the answer, and the verse only counts when the chapter is right.
+
+Bible texts live in `seek-and-find/bibles/` as plain text, one verse per line (`JOH 3:16 For God so loved...`): King James Version, World English Bible and American Standard Version, all public domain, from [eBible.org](https://ebible.org/). Regenerate them from eBible's `_vpl.txt` downloads with `node scripts/build-bible-text.cjs <folder>`.
+
+## Verse Showdown
+
+`verse-showdown/` is a static party game: pick a verse, let everyone guess where it is, then reveal and score.
+
+1. **Players**: add everyone's name. Running totals are kept in this browser's `localStorage` (`verseShowdown.players`).
+2. **Search**: search every version at once by words, by a single-verse reference (`John 3:16`, `jn 3 16`), or press *Random verse*. A word search matches verses containing any of the words (as the start of a word, so `love` also finds `loved`), ranked by the percentage of search words found. A reference or random verse is shown as its text only. The *Part of the Bible* dropdown limits searches and random verses to the Old or New Testament.
+3. **Answers**: each player types where they think it is; a hint shows how the answer was read (`Reads as John 3:16.`). For word searches, the closest 5 unique references (text only, using whichever version matches best, with no version shown) are listed below the answers with each match percentage, the matching words highlighted, the other words blurred, and the *Use* buttons disabled. *Lock in answers* when everyone is done; answers can no longer be edited.
+4. **Choose the verse**: once answers are locked, the full text is unblurred, the *Use* buttons are enabled and the host picks the verse the round is about. A single match, reference or random verse skips this step.
+5. **Reveal**: the reference is shown with each player's score out of 1000, from four equally weighted tests of 250 points: the right book (a nearby book earns up to 125), the chapter (when the book is right), the verse (when the chapter is right), and the distance in words between the answer and the verse (KJV word count; points halve every 5,000 words). Chapter and verse points shrink with distance.
+
+Bible texts in `verse-showdown/bibles/` are public-domain plain text from [openbible.com/textfiles](https://openbible.com/textfiles/), one verse per line (`Book chapter:verse<TAB>text` after a two-line header): KJV, WEB, ASV and YLT. Regression tests: `node --test verse-showdown/tests`.

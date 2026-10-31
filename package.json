@@ -1,9 +1,9 @@
 {
   "name": "jfc.github.io",
   "private": true,
-  "description": "Static GitHub Pages site with a fitness tracker. No runtime dependencies.",
+  "description": "Static GitHub Pages site with a fitness tracker and the Seek & Find Bible game. No runtime dependencies.",
   "scripts": {
-    "test": "node --test fitness/tests",
+    "test": "node --test fitness/tests seek-and-find/tests verse-showdown/tests",
     "lint": "node scripts/lint.cjs",
     "check": "npm run lint && npm test"
   }
